@@ -6,11 +6,11 @@ import {
 	b64ToBuf,
 	bufToHex,
 	deriveRegistryEntryID,
+	entryIDToSkylink,
 	generateSeedPhraseDeterministic,
-	resolverLink,
+	seedPhraseToSeed,
 	sha512,
 	taggedRegistryEntryKeys,
-	validSeedPhrase,
 } from "libskynet"
 import { generateSeedPhraseRandom, overwriteRegistryEntry, upload } from "libskynetnode"
 import read from "read"
@@ -60,7 +60,7 @@ function writeFile(fileName: string, fileData: string): string | null {
 function hardenedSeedPhrase(password: string): [string, string | null] {
 	let pw = password
 	// Add some hashing iterations to the password to make it stronger.
-	for(let i = 0; i < 1000000; i++) {
+	for (let i = 0; i < 1000000; i++) {
 		let passU8 = new TextEncoder().encode(password)
 		let hashIter = sha512(passU8)
 		password = bufToHex(hashIter)
@@ -71,7 +71,7 @@ function hardenedSeedPhrase(password: string): [string, string | null] {
 // seedPhraseToRegistryKeys will convert a seed phrase to the set of registry
 // keys that govern the registry entry where the module is published.
 function seedPhraseToRegistryKeys(seedPhrase: string): [any, Uint8Array, string | null] {
-	let [seed, errVSP] = validSeedPhrase(seedPhrase)
+	let [seed, errVSP] = seedPhraseToSeed(seedPhrase)
 	if (errVSP !== null) {
 		return [nkp, nu8, addContextToErr(errVSP, "unable to compute seed phrase")]
 	}
@@ -93,10 +93,7 @@ function seedPhraseToRegistryLink(seedPhrase: string): [string, string | null] {
 	if (errDREID !== null) {
 		return ["", addContextToErr(errDREID, "unable to compute registry entry id")]
 	}
-	let [registryLink, errRL] = resolverLink(entryID)
-	if (errRL !== null) {
-		return ["", addContextToErr(errRL, "unable to compute registry link")]
-	}
+	let registryLink = entryIDToSkylink(entryID)
 	return [registryLink, null]
 }
 
